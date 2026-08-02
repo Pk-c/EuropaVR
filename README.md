@@ -1,7 +1,6 @@
 # EuropaVR
 
-![Uploading 8535d43f-6645-4eec-968e-e37c6f87b50b.png…]()
-
+<img width="1774" height="887" alt="8535d43f-6645-4eec-968e-e37c6f87b50b" src="https://github.com/user-attachments/assets/caba7028-632a-4ef1-ac63-2a78b31540a1" />
 
 A first-person VR mod for **[Europa](https://store.steampowered.com/app/1888930/Europa/)** (Novadust Entertainment), built on praydog's [UEVR](https://github.com/praydog/UEVR).
 
