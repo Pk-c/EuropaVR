@@ -307,6 +307,59 @@ local function compute_gameplay()
     return class_name:find(config.gameplay_camera, 1, true) ~= nil
 end
 
+--- Last path segment of a UObject name, so the log stays readable.
+local function short_name(o)
+    local full = object_name(o)
+    return full:match("([^%.]+)$") or full
+end
+
+--- Every skeletal mesh the pawn owns. pawn.Mesh returns CharacterMesh0, but BP_Zee
+--- also carries a MeshHolder and a SkeletalMesh, and there was no evidence the visible
+--- character was the one being addressed. Enumerating settles it instead of guessing.
+local function hide_targets()
+    if state.hide_list ~= nil then
+        return state.hide_list
+    end
+
+    local list = {}
+    local pawn = state.pawn
+    if pawn == nil then
+        return list
+    end
+
+    local cls = try(function()
+        return api:find_uobject("Class /Script/Engine.SkeletalMeshComponent")
+    end)
+    local found = cls ~= nil and try(function() return pawn:K2_GetComponentsByClass(cls) end) or nil
+
+    if found ~= nil then
+        for i in ipairs(found) do
+            local c = try(function() return found[i] end)
+            if c ~= nil then
+                list[#list + 1] = c
+            end
+        end
+    end
+
+    if #list == 0 then
+        for _, name in ipairs({"Mesh", "SkeletalMesh", "MeshHolder"}) do
+            local c = try(function() return pawn[name] end)
+            if c ~= nil then
+                list[#list + 1] = c
+            end
+        end
+    end
+
+    local names = {}
+    for _, c in ipairs(list) do
+        names[#names + 1] = short_name(c)
+    end
+    d.components = ("%d{%s}"):format(#list, table.concat(names, ","))
+
+    state.hide_list = list
+    return list
+end
+
 --- Hiding the head is a compromise, because UE4 visibility is per primitive, never per
 --- bone. HideBoneByName collapses the bone in the skinning itself, so every pass sees
 --- the change alike — the shadow loses its head along with the view. There is no way to
@@ -317,7 +370,7 @@ end
 ---            a complete and correct shadow. Nothing of the body is visible.
 ---   "none" : leave the mesh alone
 local function set_head_hidden(hidden)
-    if state.mesh == nil or config.hide_mode == "none" or state.head_hidden == hidden then
+    if state.mesh == nil or config.hide_mode == "none" then
         return
     end
 
@@ -325,13 +378,48 @@ local function set_head_hidden(hidden)
     local ok
 
     if config.hide_mode == "mesh" then
-        ok = try(function()
-            -- Must be set before the mesh goes invisible, or the shadow drops with it.
-            mesh:SetCastHiddenShadow(true)
-            mesh:SetVisibility(not hidden, true)
-            return true
-        end)
-    else
+        -- Re-applied every frame, never latched: the calls reported success yet the
+        -- body stayed on screen, which is the same thing that happened with the
+        -- character rotation — the game reasserts its own state on its tick, so this
+        -- has to run after it and keep running.
+        --
+        -- Several levers are tried because they fail differently. SetRenderInMainPass
+        -- is the one that matches the intent exactly: the primitive keeps feeding the
+        -- shadow depth pass while dropping out of the main pass.
+        local worked = {}
+        for _, component in ipairs(hide_targets()) do
+            if try(function() component:SetCastHiddenShadow(true) return true end) then
+                worked.shadow = true
+            end
+            if try(function() component:SetRenderInMainPass(not hidden) return true end) then
+                worked.mainpass = true
+            end
+            if try(function() component:SetVisibility(not hidden, true) return true end) then
+                worked.visibility = true
+            end
+            if try(function() component:SetOwnerNoSee(hidden) return true end) then
+                worked.ownernosee = true
+            end
+            if try(function() component:SetHiddenInGame(hidden, true) return true end) then
+                worked.hiddeningame = true
+            end
+        end
+
+        local levers = {}
+        for _, k in ipairs({"mainpass", "visibility", "ownernosee", "hiddeningame", "shadow"}) do
+            levers[#levers + 1] = k .. "=" .. (worked[k] and "1" or "0")
+        end
+        d.hide_bone = "mesh[" .. table.concat(levers, ",") .. "]"
+
+        state.head_hidden = hidden
+        return
+    end
+
+    if state.head_hidden == hidden then
+        return
+    end
+
+    do
         if hidden then
             ok = try(function() mesh:HideBoneByName(config.bone, 0) return true end)
         else
@@ -465,6 +553,7 @@ local function refresh_pawn()
     end
 
     state.pawn = pawn
+    state.hide_list = nil
     state.mesh = try(function() return pawn.Mesh end)
     state.boom = try(function() return pawn.CameraBoom end)
     state.head_hidden = false
@@ -494,6 +583,7 @@ local function report()
         "HMD[" .. tostring(d.hmd) .. "]",
         "readback=" .. d.readback,
         "hide_bone=" .. d.hide_bone,
+        "components=" .. tostring(d.components),
         "boom_write=" .. d.boom_write,
     }, " ~ ")
 end
@@ -518,10 +608,6 @@ uevr.sdk.callbacks.on_pre_engine_tick(function(engine, delta)
         end
     end
 
-    if config.hide_head then
-        set_head_hidden(state.gameplay)
-    end
-
     if emit.count < emit.max then
         local sig = table.concat({d.pawn_class, tostring(state.gameplay), d.actor_loc,
                                   d.xinput, d.control_rot, d.readback}, "|")
@@ -539,7 +625,15 @@ end)
 --- is why the character ignored both the headset and the snap turn.
 uevr.sdk.callbacks.on_post_engine_tick(function()
     if not state.gameplay then
+        if config.hide_head then
+            set_head_hidden(false) -- give the body back for cutscenes
+        end
         return
+    end
+
+    -- After the game's tick, so its own visibility handling has already run.
+    if config.hide_head then
+        set_head_hidden(true)
     end
 
     apply_character_orientation()
