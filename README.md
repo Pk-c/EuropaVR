@@ -1,5 +1,8 @@
 # EuropaVR
 
+<img width="1774" height="887" alt="503b4a75-1f66-45f4-9117-ff6c8af25341" src="https://github.com/user-attachments/assets/27600844-a4d2-4bc0-b7ce-4a3245596f81" />
+
+
 A first-person VR mod for **[Europa](https://store.steampowered.com/app/1888930/Europa/)** (Novadust Entertainment), built on praydog's [UEVR](https://github.com/praydog/UEVR).
 
 Europa is a third-person Unreal Engine 4.27 game. This mod turns it into a first-person VR experience: the camera sits at the character's head, the body faces wherever you look, and movement works like an FPS with snap turning.
