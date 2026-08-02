@@ -65,6 +65,10 @@ local config = {
     consume_right_stick = true, -- keep the game from also applying TurnRate/LookUpRate
 
     hide_head     = true,
+    -- "bone" | "mesh" | "none" — see set_head_hidden for the trade-off each carries.
+    -- "mesh" is the default: from a viewpoint inside the head, a visible body reads
+    -- worse than no body at all, while a headless shadow is noticed constantly.
+    hide_mode     = "mesh",
     collapse_boom = true,
 }
 
@@ -303,17 +307,39 @@ local function compute_gameplay()
     return class_name:find(config.gameplay_camera, 1, true) ~= nil
 end
 
+--- Hiding the head is a compromise, because UE4 visibility is per primitive, never per
+--- bone. HideBoneByName collapses the bone in the skinning itself, so every pass sees
+--- the change alike — the shadow loses its head along with the view. There is no way to
+--- drop one bone from the base pass only.
+---
+---   "bone" : head hidden, body still visible, shadow is headless
+---   "mesh" : whole mesh hidden from every view, but bCastHiddenShadow keeps it casting
+---            a complete and correct shadow. Nothing of the body is visible.
+---   "none" : leave the mesh alone
 local function set_head_hidden(hidden)
-    if state.mesh == nil or state.head_hidden == hidden then
+    if state.mesh == nil or config.hide_mode == "none" or state.head_hidden == hidden then
         return
     end
+
+    local mesh = state.mesh
     local ok
-    if hidden then
-        ok = try(function() state.mesh:HideBoneByName(config.bone, 0) return true end)
+
+    if config.hide_mode == "mesh" then
+        ok = try(function()
+            -- Must be set before the mesh goes invisible, or the shadow drops with it.
+            mesh:SetCastHiddenShadow(true)
+            mesh:SetVisibility(not hidden, true)
+            return true
+        end)
     else
-        ok = try(function() state.mesh:UnHideBoneByName(config.bone) return true end)
+        if hidden then
+            ok = try(function() mesh:HideBoneByName(config.bone, 0) return true end)
+        else
+            ok = try(function() mesh:UnHideBoneByName(config.bone) return true end)
+        end
     end
-    d.hide_bone = ok and "ok" or "NONE"
+
+    d.hide_bone = ok and (config.hide_mode .. ":ok") or (config.hide_mode .. ":NONE")
     if ok then
         state.head_hidden = hidden
     end

@@ -162,6 +162,42 @@ void fix_unfocused_audio() {
     }
 }
 
+// Europa ships tuned for flat screens: it renders at 65% and leans on FSR to upscale.
+// In VR that spatial upscaling lands on top of stereo rendering and costs a lot of
+// clarity, which is the first thing you notice in a headset. [SystemSettings] is the
+// section UE4 lets a user config override console variables from.
+void fix_vr_rendering() {
+    if (game_config_dir().empty()) {
+        log("Could not resolve the game config directory - rendering fix skipped");
+        return;
+    }
+
+    const auto engine_ini = game_config_dir() / L"Engine.ini";
+
+    const int screen_percentage = setting_int(L"ScreenPercentage", 100);
+    if (screen_percentage > 0) {
+        const auto value = std::to_wstring(screen_percentage);
+        set_ini_value(engine_ini, L"SystemSettings", L"r.ScreenPercentage", value.c_str());
+        log("Rendering: r.ScreenPercentage=%d", screen_percentage);
+    }
+
+    if (setting_int(L"DisableFSR", 1) != 0) {
+        set_ini_value(engine_ini, L"SystemSettings", L"r.FidelityFX.FSR.Enabled", L"0");
+        log("Rendering: FSR disabled");
+    }
+
+    // -1 leaves the game's choice alone. 0 = none, 1 = FXAA, 2 = TAA (the default here).
+    // TAA is what causes ghosting in VR, but dropping it makes a game this foliage-heavy
+    // shimmer, so the call is left to the player rather than forced.
+    const int aa = setting_int(L"AntiAliasing", -1);
+    if (aa >= 0) {
+        const auto value = std::to_wstring(aa);
+        set_ini_value(engine_ini, L"SystemSettings", L"r.DefaultFeature.AntiAliasing",
+                      value.c_str());
+        log("Rendering: r.DefaultFeature.AntiAliasing=%d", aa);
+    }
+}
+
 // UEVR only honours the saved menu state when RememberMenuState is on; with it
 // off (the default) the menu pops open on every launch and swallows the input
 // until it is dismissed. Turning it on while pinning MenuOpen to false makes the
@@ -185,6 +221,9 @@ DWORD WINAPI bootstrap_thread(LPVOID) {
     // First thing, to beat the engine to its own config file.
     if (setting_int(L"FixUnfocusedAudio", 1) != 0) {
         fix_unfocused_audio();
+    }
+    if (setting_int(L"FixVRRendering", 1) != 0) {
+        fix_vr_rendering();
     }
 
     if (setting_int(L"Nullify", 1) != 0) {

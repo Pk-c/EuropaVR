@@ -61,7 +61,9 @@ struct Config {
     float yaw_offset     = 0.0f;
     bool  apply_body_yaw = true;
     bool  write_view_rot = true;
+    // Pushes the eye out of the skull. Both are hot-reloaded from the ini.
     float forward_offset = 12.0f;
+    float up_offset      = 0.0f;
 
     bool  snap_turn      = true;
     float snap_angle     = 45.0f;
@@ -90,6 +92,14 @@ public:
         if (m_snap_wait > 0) {
             --m_snap_wait;
         }
+
+        // Re-read the ini roughly once a second so the camera can be dialled in
+        // without restarting the game.
+        if (++m_config_age >= 60) {
+            m_config_age = 0;
+            reload_config_if_changed();
+        }
+
         m_gameplay.store(compute_gameplay());
     }
 
@@ -171,10 +181,11 @@ public:
             }
         }
 
-        if (m_config.forward_offset != 0.0f && m_gameplay.load()) {
+        if (m_gameplay.load()) {
             const float r = m_final_yaw.load() * kDegToRad;
             position->x += std::cos(r) * m_config.forward_offset;
             position->y += std::sin(r) * m_config.forward_offset;
+            position->z += m_config.up_offset;
         }
     }
 
@@ -304,6 +315,25 @@ private:
             (int)m_cmc_ok, target);
     }
 
+    // Reloads the ini and reports only when something actually moved, so tuning the
+    // camera from the file shows up in the log without spamming it.
+    void reload_config_if_changed() {
+        const Config before = m_config;
+        load_config();
+
+        if (before.forward_offset != m_config.forward_offset ||
+            before.up_offset != m_config.up_offset ||
+            before.yaw_sign != m_config.yaw_sign ||
+            before.yaw_offset != m_config.yaw_offset ||
+            before.snap_angle != m_config.snap_angle) {
+            API::get()->log_info(
+                "[EuropaVR] config reloaded | forward=%.1f up=%.1f yaw_sign=%.0f "
+                "yaw_offset=%.1f snap_angle=%.0f",
+                m_config.forward_offset, m_config.up_offset, m_config.yaw_sign,
+                m_config.yaw_offset, m_config.snap_angle);
+        }
+    }
+
     void load_config() {
         const auto path = API::get()->get_persistent_dir(L"EuropaVR_plugin.ini");
         std::ifstream in{path};
@@ -326,6 +356,7 @@ private:
             else if (key == "ApplyBodyYaw")  m_config.apply_body_yaw = std::atoi(value.c_str()) != 0;
             else if (key == "WriteViewRot")  m_config.write_view_rot = std::atoi(value.c_str()) != 0;
             else if (key == "ForwardOffset") m_config.forward_offset = (float)std::atof(value.c_str());
+            else if (key == "UpOffset")      m_config.up_offset = (float)std::atof(value.c_str());
             else if (key == "SnapTurn")      m_config.snap_turn = std::atoi(value.c_str()) != 0;
             else if (key == "SnapAngle")     m_config.snap_angle = (float)std::atof(value.c_str());
             else if (key == "SnapThreshold") m_config.snap_threshold = (float)std::atof(value.c_str());
@@ -352,6 +383,7 @@ private:
     int  m_snap_count{0};
 
     int  m_frames{0};
+    int  m_config_age{0};
     bool m_control_ok{false};
     bool m_rot_mode_ok{false};
     bool m_cmc_ok{false};
