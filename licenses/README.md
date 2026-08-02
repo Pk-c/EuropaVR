@@ -1,20 +1,29 @@
 # Third-party licence texts
 
-`package.ps1` copies whatever it finds here into the release archive, and warns
-about anything missing. These files are **not** vendored automatically, because
-reproducing a licence text from memory is exactly how you ship a wrong one.
+Fetched from their authoritative sources, never reproduced from memory — that is
+exactly how you end up shipping a licence that says something the original does
+not.
 
-Fetch each from its authoritative source and save it under the expected name:
-
-| File | Licence | Fetch from |
+| File | Covers | Source |
 |---|---|---|
-| `UEVR-MIT.txt` | MIT | <https://github.com/praydog/UEVR/blob/master/LICENSE> |
-| `OpenVR-BSD-3-Clause.txt` | BSD-3-Clause | <https://github.com/ValveSoftware/openvr/blob/master/LICENSE> |
-| `OpenXR-Apache-2.0.txt` | Apache-2.0 | <https://github.com/KhronosGroup/OpenXR-SDK/blob/main/LICENSE> |
+| `UEVR-LICENSE.txt` | UEVR as a whole | <https://github.com/praydog/UEVR/blob/master/LICENSE> |
+| `OpenVR-BSD-3-Clause.txt` | `openvr_api.dll` | <https://github.com/ValveSoftware/openvr/blob/master/LICENSE> |
+| `OpenXR-Apache-2.0.txt` | `openxr_loader.dll` | <https://github.com/KhronosGroup/OpenXR-SDK/blob/main/LICENSE> |
 
-Apache-2.0 section 4 requires giving recipients a copy of the licence with the
-redistributed binary, so `OpenXR-Apache-2.0.txt` is the one that genuinely must
-be present before publishing a release.
+## Read UEVR-LICENSE.txt before assuming anything
 
-`UEVR-DISCLAIMER.txt` and `UEVR-SDK-LICENSE.txt` are picked up straight from the
-UEVR install directory by `package.ps1`; nothing to do for those.
+It is three lines long and says **All rights reserved**. UEVR is not MIT.
+
+The MIT licence that *is* part of UEVR governs only its `include/` directory —
+the plugin SDK — and the file `include/LICENSE` states that it is "separate from
+the license for the rest of the UEVR codebase". `package.ps1` copies that one
+straight out of the UEVR install as `UEVR-SDK-LICENSE.txt`, because EuropaVR.dll
+is compiled against those headers.
+
+That distinction is why releases do not bundle `UEVRBackend.dll` or
+`UEVRPluginNullifier.dll`. See `THIRD-PARTY.txt`.
+
+The OpenVR and OpenXR texts only need to travel with a build that actually ships
+those DLLs, which is `package.ps1 -IncludeUevr`. Apache-2.0 section 4 requires
+handing recipients a copy of the licence, so that one is not optional when it
+applies.
