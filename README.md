@@ -4,7 +4,7 @@ A first-person VR mod for **[Europa](https://store.steampowered.com/app/1888930/
 
 Europa is a third-person Unreal Engine 4.27 game. This mod turns it into a first-person VR experience: the camera sits at the character's head, the body faces wherever you look, and movement works like an FPS with snap turning.
 
-> ⚠️ Work in progress. Playable, but not finished.
+> This is still a work in progress. the game is playable, but I plan to add more to make it as immersive as possible !
 
 ## What it does
 
