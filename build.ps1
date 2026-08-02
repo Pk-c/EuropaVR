@@ -24,7 +24,8 @@ $sources = @(
 $cflags = "/nologo /std:c++20 /EHsc /O2 /MT /W4 /permissive- /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX"
 # /IGNORE:4222 - the real dsound.dll does give ordinals to the two COM entry
 # points, and we mirror its table exactly, so the convention warning is expected.
-$lflags = "/DLL /DEF:EuropaVR.def /IGNORE:4222 /OUT:build\dsound.dll /IMPLIB:build\dsound.lib shell32.lib ole32.lib user32.lib"
+# advapi32: RegGetValueW, used to read the machine's configured OpenXR runtime.
+$lflags = "/DLL /DEF:EuropaVR.def /IGNORE:4222 /OUT:build\dsound.dll /IMPLIB:build\dsound.lib shell32.lib ole32.lib user32.lib advapi32.lib"
 
 $bat = Join-Path $env:TEMP "europavr_build.bat"
 @"

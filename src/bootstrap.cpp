@@ -198,6 +198,21 @@ void fix_vr_rendering() {
     }
 }
 
+// The OpenXR runtime the machine itself is configured for, per-user first as the
+// loader spec has it. Empty when nothing is registered.
+std::wstring registry_openxr_runtime() {
+    for (const HKEY hive : {HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE}) {
+        wchar_t value[1024]{};
+        DWORD size = sizeof(value);
+        const auto status = RegGetValueW(hive, L"SOFTWARE\\Khronos\\OpenXR\\1", L"ActiveRuntime",
+                                         RRF_RT_REG_SZ, nullptr, value, &size);
+        if (status == ERROR_SUCCESS && value[0] != L'\0') {
+            return value;
+        }
+    }
+    return {};
+}
+
 // Launching through Steam while SteamVR is running hands the process an
 // XR_RUNTIME_JSON environment variable pointing at SteamVR, which overrides whatever
 // OpenXR runtime the machine is actually configured for. SteamVR then treats the game
@@ -221,15 +236,37 @@ void select_openxr_runtime() {
 
     const auto forced = setting(L"OpenXrRuntimeJson", L"");
     if (!forced.empty()) {
-        SetEnvironmentVariableW(L"XR_RUNTIME_JSON", forced.c_str());
-        log("OpenXR: forcing runtime %ls", forced.c_str());
+        if (fs::exists(forced)) {
+            SetEnvironmentVariableW(L"XR_RUNTIME_JSON", forced.c_str());
+            log("OpenXR: forcing runtime %ls", forced.c_str());
+        } else {
+            log("OpenXR: %ls does not exist - keeping the inherited runtime", forced.c_str());
+        }
         return;
     }
 
-    if (setting_int(L"UseSystemOpenXrRuntime", 0) != 0 && len > 0) {
-        SetEnvironmentVariableW(L"XR_RUNTIME_JSON", nullptr);
-        log("OpenXR: cleared the inherited override, falling back to the system runtime");
+    if (setting_int(L"UseSystemOpenXrRuntime", 0) == 0 || len == 0) {
+        return;
     }
+
+    // Never drop a runtime that works for one that might not exist. Clearing the
+    // variable only helps if the machine actually has a system runtime registered and
+    // installed; otherwise the loader would find nothing and the player would get no
+    // VR at all, which is far worse than one extra click.
+    const auto system_runtime = registry_openxr_runtime();
+    if (system_runtime.empty()) {
+        log("OpenXR: no system runtime registered - keeping the inherited one");
+        return;
+    }
+    if (!fs::exists(system_runtime)) {
+        log("OpenXR: system runtime %ls is registered but missing - keeping the inherited one",
+            system_runtime.c_str());
+        return;
+    }
+
+    SetEnvironmentVariableW(L"XR_RUNTIME_JSON", nullptr);
+    log("OpenXR: cleared the inherited override, using system runtime %ls",
+        system_runtime.c_str());
 }
 
 // UEVR only honours the saved menu state when RememberMenuState is on; with it
