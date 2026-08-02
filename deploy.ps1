@@ -66,11 +66,31 @@ function Set-UnfocusedAudio {
     Set-Content -Path $Path -Value $out -Encoding utf8
 }
 
+# Drops whole sections from an ini. The loader writes [Audio] and [SystemSettings]
+# at runtime, and an uninstall that only removed one key left the rendering overrides
+# silently in force - which also quietly invalidates any clean-install test.
+function Remove-IniSections {
+    param([string]$Path, [string[]]$Sections)
+
+    if (-not (Test-Path $Path)) { return }
+
+    $out = New-Object System.Collections.Generic.List[string]
+    $section = ""
+    foreach ($line in @(Get-Content -Path $Path)) {
+        if ($line -match '^\s*\[(.+)\]\s*$') { $section = $matches[1] }
+        if ($Sections -contains $section) { continue }
+        $out.Add($line)
+    }
+    while ($out.Count -gt 0 -and $out[$out.Count - 1].Trim() -eq "") { $out.RemoveAt($out.Count - 1) }
+
+    Set-Content -Path $Path -Value $out -Encoding utf8
+}
+
 if ($Uninstall) {
     if (Test-Path $proxy)   { Remove-Item $proxy -Force;            Write-Host "Removed: dsound.dll" }
     if (Test-Path $payload) { Remove-Item $payload -Recurse -Force; Write-Host "Removed: EuropaVR folder" }
-    Set-UnfocusedAudio -Path $engineIni -Remove
-    Write-Host "Removed: UnfocusedVolumeMultiplier from Engine.ini"
+    Remove-IniSections -Path $engineIni -Sections @("Audio", "SystemSettings")
+    Write-Host "Removed: [Audio] and [SystemSettings] from Engine.ini"
     Write-Host "Uninstalled. The game is back to its original state." -ForegroundColor Green
     return
 }
