@@ -1,0 +1,13 @@
+﻿FrameworkConfig_MenuOpen=false
+FrameworkConfig_RememberMenuState=true
+Frontend_RequestedRuntime=openxr_loader.dll
+VR_AimMethod=0
+VR_AimModifyPlayerControlRotation=false
+VR_AimUsePawnControlRotation=false
+VR_DecoupledPitch=true
+VR_MovementOrientation=0
+VR_RoomscaleMovement=false
+VR_SnapTurn=false
+VR_SnapturnJoystickDeadzone=0.200000
+VR_SnapturnTurnAngle=45
+VR_WorldScale=1.000000

@@ -1,0 +1,17 @@
+; Ordinals mirror the real C:\Windows\System32\dsound.dll so that imports by
+; ordinal keep working, not just imports by name.
+LIBRARY dsound
+
+EXPORTS
+    DirectSoundCreate               @1
+    DirectSoundEnumerateA           @2
+    DirectSoundEnumerateW           @3
+    DllCanUnloadNow                 @4  PRIVATE
+    DllGetClassObject               @5  PRIVATE
+    DirectSoundCaptureCreate        @6
+    DirectSoundCaptureEnumerateA    @7
+    DirectSoundCaptureEnumerateW    @8
+    GetDeviceID                     @9
+    DirectSoundFullDuplexCreate     @10
+    DirectSoundCreate8              @11
+    DirectSoundCaptureCreate8       @12
