@@ -321,7 +321,7 @@ DWORD WINAPI bootstrap_thread(LPVOID) {
 
     wait_for_game_window(setting_int(L"WindowWaitTimeoutMs", 120000));
 
-    const int delay = setting_int(L"PostWindowDelayMs", 3000);
+    const int delay = setting_int(L"PostWindowDelayMs", 1500);
     if (delay > 0) {
         log("Waiting %d ms before injecting the runtime", delay);
         Sleep(static_cast<DWORD>(delay));
