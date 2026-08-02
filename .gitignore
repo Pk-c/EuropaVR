@@ -19,3 +19,4 @@ tools/pak_list.txt
 *.KNOWN_GOOD.lua
 *.log
 payload/profile/plugins/
+dist/

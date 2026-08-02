@@ -1,0 +1,92 @@
+EuropaVR - first person VR mod for Europa
+=========================================
+
+REQUIREMENTS
+------------
+  * Europa on Steam (any recent version)
+  * A PC VR headset with an OpenXR runtime (SteamVR, Oculus/Meta, Virtual Desktop...)
+  * Windows 10/11, 64-bit
+
+
+INSTALL
+-------
+  1. Close the game.
+
+  2. Copy the "Europa" folder from this archive into your Europa install
+     directory, merging it with the one already there:
+
+         ...\steamapps\common\Europa\
+
+     If you did it right, this file now exists:
+
+         ...\steamapps\common\Europa\Europa\Binaries\Win64\dsound.dll
+
+     To find the folder: Steam -> right click Europa -> Manage -> Browse local files.
+
+  3. Put your headset on and launch Europa normally from Steam.
+
+That is all. There is no injector to run and nothing to click. The game starts
+flat, then switches to VR by itself a few seconds after the window appears.
+
+
+CONTROLS
+--------
+  Left stick        move, relative to where you are looking
+  Right stick       snap turn
+  Insert  or L3+R3  open the UEVR menu (settings, camera offsets)
+
+Everything else keeps the game's own gamepad mapping.
+
+
+TUNING
+------
+  Europa\Binaries\Win64\EuropaVR\EuropaVR.ini
+      Resolution, FSR, anti-aliasing, VR runtime, timings.
+      Lower ScreenPercentage first if the framerate struggles: 85, then 75.
+
+  %APPDATA%\UnrealVRMod\Europa-Win64-Shipping\EuropaVR_plugin.ini
+      Eye placement and snap turn. Re-read about once a second, so edits apply
+      while the game is running.
+      If the character turns the opposite way to your head, set YawSign=1.
+
+  UEVR menu -> Camera Offset
+      Nudge the eye position live, in the headset.
+
+
+UNINSTALL
+---------
+  Delete these two, and the game is exactly as it was:
+
+      Europa\Binaries\Win64\dsound.dll
+      Europa\Binaries\Win64\EuropaVR\        (whole folder)
+
+  The mod writes two things outside the game folder, harmless to leave behind:
+      %APPDATA%\UnrealVRMod\Europa-Win64-Shipping\   (VR settings)
+      [Audio] and [SystemSettings] entries in
+      %LOCALAPPDATA%\Europa\Saved\Config\WindowsNoEditor\Engine.ini
+
+
+IF IT DOES NOT WORK
+-------------------
+  The loader writes a log next to itself:
+
+      Europa\Binaries\Win64\EuropaVR\EuropaVR.log
+
+  It records every step, so it will say where things stopped.
+
+  * Game starts flat and stays flat
+        Check the log. Make sure your VR runtime is running first.
+
+  * Game crashes on launch
+        UEVR is loading too early. Raise PostWindowDelayMs in EuropaVR.ini
+        (try 15000). Enabled=0 disables the mod entirely without uninstalling.
+
+  * No sound once VR starts
+        Should be handled automatically. If not, check that SteamVR is not
+        switching your default audio device away from where you are listening.
+
+
+LICENCES
+--------
+  See THIRD-PARTY.txt and the licenses\ folder. This mod bundles UEVR by
+  praydog; it is not affiliated with Novadust Entertainment or Epic Games.
