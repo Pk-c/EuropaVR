@@ -23,7 +23,27 @@ INSTALL
 
      To find the folder: Steam -> right click Europa -> Manage -> Browse local files.
 
-  3. Put your headset on and launch Europa normally from Steam.
+  3. Download UEVR and copy four files in.
+
+     Get "UEVR.zip" from  https://github.com/praydog/UEVR/releases
+     Open it and copy these four files:
+
+         UEVRBackend.dll
+         UEVRPluginNullifier.dll
+         openxr_loader.dll
+         openvr_api.dll
+
+     into:
+
+         ...\Europa\Binaries\Win64\EuropaVR\
+
+     There is a COPY-UEVR-FILES-HERE.txt sitting in that folder to mark the spot;
+     delete it once you are done.
+
+     Why the extra step: UEVR is "All rights reserved", so it is not ours to
+     redistribute. This is the one thing you have to fetch yourself.
+
+  4. Put your headset on and launch Europa normally from Steam.
 
 That is all. There is no injector to run and nothing to click. The game starts
 flat, then switches to VR by itself a few seconds after the window appears.

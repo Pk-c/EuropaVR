@@ -1,4 +1,4 @@
-# Sorties de compilation
+# Build output
 build/
 *.obj
 *.pdb
@@ -6,16 +6,16 @@ build/
 *.exp
 *.lib
 
-# Binaires tiers recuperes par l'outillage (voir tools/README.md)
+# Third-party binaries fetched by the tooling (see tools/README.md)
 tools/repak.exe
 tools/*.zip
 
-# Contenu extrait du jeu : appartient a Novadust Entertainment, ne doit jamais
-# etre publie. Ces fichiers ne servent qu'a l'analyse locale.
+# Content extracted from the game: property of Novadust Entertainment, and must
+# never be published. These files exist only for local analysis.
 extracted/
 tools/pak_list.txt
 
-# Artefacts de developpement
+# Development artefacts
 *.KNOWN_GOOD.lua
 *.log
 payload/profile/plugins/

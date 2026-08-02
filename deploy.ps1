@@ -1,6 +1,9 @@
-# Deploie (ou retire) EuropaVR dans le dossier du jeu.
-#   .\deploy.ps1              -> installe
-#   .\deploy.ps1 -Uninstall   -> desinstalle proprement
+# Installs (or removes) EuropaVR in the game folder, for development.
+#   .\deploy.ps1              -> install
+#   .\deploy.ps1 -Uninstall   -> clean removal
+#
+# End users get the release archive instead; see package.ps1. This script also copies
+# UEVR's binaries out of a local install, which a release must not do.
 param(
     [string]$GameDir  = "H:\Steam\steamapps\common\Europa",
     [string]$UevrDir  = "H:\UEVR",
@@ -12,14 +15,14 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 $binaries = Join-Path $GameDir "Europa\Binaries\Win64"
 if (-not (Test-Path (Join-Path $binaries "Europa-Win64-Shipping.exe"))) {
-    throw "Europa-Win64-Shipping.exe introuvable dans $binaries"
+    throw "Europa-Win64-Shipping.exe not found in $binaries"
 }
 
 $proxy   = Join-Path $binaries "dsound.dll"
 $payload = Join-Path $binaries "EuropaVR"
 
-# Engine.ini du jeu : c'est la que vit le correctif audio (UE4 coupe le son quand
-# la fenetre perd le focus au demarrage de SteamVR).
+# The game's Engine.ini: where the audio fix lives, since UE4 mutes the game when its
+# window loses focus as SteamVR starts.
 $engineIni = Join-Path $env:LOCALAPPDATA "Europa\Saved\Config\WindowsNoEditor\Engine.ini"
 
 function Set-UnfocusedAudio {
@@ -64,20 +67,20 @@ function Set-UnfocusedAudio {
 }
 
 if ($Uninstall) {
-    if (Test-Path $proxy)   { Remove-Item $proxy -Force;             Write-Host "Retire : dsound.dll" }
-    if (Test-Path $payload) { Remove-Item $payload -Recurse -Force;  Write-Host "Retire : EuropaVR\" }
+    if (Test-Path $proxy)   { Remove-Item $proxy -Force;            Write-Host "Removed: dsound.dll" }
+    if (Test-Path $payload) { Remove-Item $payload -Recurse -Force; Write-Host "Removed: EuropaVR folder" }
     Set-UnfocusedAudio -Path $engineIni -Remove
-    Write-Host "Retire : UnfocusedVolumeMultiplier dans Engine.ini"
-    Write-Host "Desinstalle. Le jeu est revenu a l'etat d'origine." -ForegroundColor Green
+    Write-Host "Removed: UnfocusedVolumeMultiplier from Engine.ini"
+    Write-Host "Uninstalled. The game is back to its original state." -ForegroundColor Green
     return
 }
 
 $built = Join-Path $root "build\dsound.dll"
-if (-not (Test-Path $built)) { throw "build\dsound.dll absent - lance d'abord .\build.ps1" }
+if (-not (Test-Path $built)) { throw "build\dsound.dll missing - run .\build.ps1 first" }
 
-# Garde-fou : ne jamais ecraser un vrai dsound.dll qui ne serait pas le notre.
+# Guard rail: never overwrite a real dsound.dll that is not ours.
 if ((Test-Path $proxy) -and -not (Test-Path $payload)) {
-    throw "Un dsound.dll etranger existe deja dans $binaries - a verifier manuellement."
+    throw "A foreign dsound.dll already exists in $binaries - check it by hand."
 }
 
 New-Item -ItemType Directory -Force -Path $payload | Out-Null
@@ -85,45 +88,45 @@ New-Item -ItemType Directory -Force -Path $payload | Out-Null
 $fromUevr = @("UEVRBackend.dll", "UEVRPluginNullifier.dll", "openxr_loader.dll", "openvr_api.dll")
 foreach ($f in $fromUevr) {
     $src = Join-Path $UevrDir $f
-    if (-not (Test-Path $src)) { throw "Fichier UEVR manquant : $src" }
+    if (-not (Test-Path $src)) { throw "Missing UEVR file: $src" }
     Copy-Item $src (Join-Path $payload $f) -Force
     Write-Host "  payload <- $f"
 }
 
-# Le profil UEVR complet part dans le dossier du jeu. C'est le chargeur qui le
-# recopiera dans %APPDATA% au premier lancement, ce qui rend l'installation
-# reellement autonome : l'utilisateur final n'a rien a placer a la main.
+# The whole UEVR profile goes into the game folder. The loader copies it into %APPDATA%
+# on first launch, which is what makes the install self-contained: the end user places
+# nothing by hand.
 $profileSrc = Join-Path $root "payload\profile"
 $profileDst = Join-Path $payload "profile"
 Copy-Item $profileSrc $payload -Recurse -Force
 Write-Host "  payload <- profile\ (config.txt, scripts\)"
 
-# Le plugin C++ vit dans le sous-dossier plugins du profil, la ou UEVR le cherche.
+# The C++ plugin lives in the profile's plugins subfolder, where UEVR looks for it.
 $plugin = Join-Path $root "build\EuropaVR.dll"
 if (Test-Path $plugin) {
     New-Item -ItemType Directory -Force -Path (Join-Path $profileDst "plugins") | Out-Null
     Copy-Item $plugin (Join-Path $profileDst "plugins\EuropaVR.dll") -Force
     Write-Host "  payload <- profile\plugins\EuropaVR.dll"
 } else {
-    Write-Warning "build\EuropaVR.dll absent - lance .\build_plugin.ps1 (sans lui, pas de rotation du corps)"
+    Write-Warning "build\EuropaVR.dll missing - run .\build_plugin.ps1 (without it, the body will not turn)"
 }
 
-# Ne pas ecraser un EuropaVR.ini deja ajuste par l'utilisateur.
+# Do not overwrite an EuropaVR.ini the user has already tuned.
 $ini = Join-Path $payload "EuropaVR.ini"
 if (-not (Test-Path $ini)) {
     Copy-Item (Join-Path $root "payload\EuropaVR.ini") $ini -Force
     Write-Host "  payload <- EuropaVR.ini"
 } else {
-    Write-Host "  payload    EuropaVR.ini (conserve)"
+    Write-Host "  payload    EuropaVR.ini (kept)"
 }
 
 Copy-Item $built $proxy -Force
 Write-Host "  Binaries\Win64 <- dsound.dll"
 
-# Applique le correctif audio des maintenant, pour que meme le tout premier
-# lancement ne coure pas contre la lecture de config par le moteur.
+# Apply the audio fix now, so even the very first launch does not race the engine
+# reading its own config.
 Set-UnfocusedAudio -Path $engineIni
 Write-Host "  Engine.ini     <- [Audio] UnfocusedVolumeMultiplier=1.0"
 
-Write-Host "`nInstalle dans $binaries" -ForegroundColor Green
-Write-Host "Lance le jeu normalement (Steam). Log : $payload\EuropaVR.log"
+Write-Host "`nInstalled into $binaries" -ForegroundColor Green
+Write-Host "Launch the game normally from Steam. Log: $payload\EuropaVR.log"

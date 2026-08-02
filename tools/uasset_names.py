@@ -81,7 +81,7 @@ def dump_names(path: Path):
 if __name__ == "__main__":
     keywords = [k.lower() for k in sys.argv[2:]]
     names = dump_names(Path(sys.argv[1]))
-    print(f"# {Path(sys.argv[1]).name} : {len(names)} noms")
+    print(f"# {Path(sys.argv[1]).name}: {len(names)} names")
     for n in names:
         if not keywords or any(k in n.lower() for k in keywords):
             print(n)

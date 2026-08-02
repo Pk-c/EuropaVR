@@ -77,6 +77,8 @@ Extracting the `.pak` uses [repak](https://github.com/trumank/repak), which is n
 
 Code in this repository: MIT (see `LICENSE`).
 
-The mod builds on [UEVR](https://github.com/praydog/UEVR) (MIT). Releases will redistribute `UEVRBackend.dll`, `UEVRPluginNullifier.dll`, `openvr_api.dll` (BSD-3-Clause) and `openxr_loader.dll` (Apache-2.0) along with their licence notices.
+**UEVR itself is "All rights reserved"** — only its `include/` directory is MIT, and that directory says so explicitly. The plugin is built against those MIT headers, which is fine, but `UEVRBackend.dll` and `UEVRPluginNullifier.dll` are **not** redistributed by this project. Releases ship only our own files; users download UEVR themselves and copy four DLLs in, as `INSTALL.txt` explains.
 
-No game content is included in this repository.
+See `THIRD-PARTY.txt` for the full breakdown.
+
+No game content is included in this repository. Europa is the property of Novadust Entertainment.

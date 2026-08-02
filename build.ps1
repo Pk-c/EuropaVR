@@ -6,13 +6,13 @@ $build = Join-Path $root "build"
 New-Item -ItemType Directory -Force -Path $build | Out-Null
 
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-if (-not (Test-Path $vswhere)) { throw "vswhere.exe introuvable - Visual Studio n'est pas installe." }
+if (-not (Test-Path $vswhere)) { throw "vswhere.exe not found - Visual Studio is not installed." }
 
 $inst = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-if (-not $inst) { throw "Aucune installation VS avec les outils C++ x64." }
+if (-not $inst) { throw "No Visual Studio install with the x64 C++ tools." }
 
 $vcvars = Join-Path $inst "VC\Auxiliary\Build\vcvars64.bat"
-if (-not (Test-Path $vcvars)) { throw "vcvars64.bat introuvable dans $inst" }
+if (-not (Test-Path $vcvars)) { throw "vcvars64.bat not found in $inst" }
 
 $sources = @(
     "src\dllmain.cpp"
@@ -40,5 +40,5 @@ exit /b %errorlevel%
 $code = $LASTEXITCODE
 Remove-Item $bat -ErrorAction SilentlyContinue
 
-if ($code -ne 0) { throw "Echec de compilation (code $code)" }
+if ($code -ne 0) { throw "Build failed (exit code $code)" }
 Write-Host "`nOK -> $build\dsound.dll" -ForegroundColor Green

@@ -1,5 +1,5 @@
 # Builds build\EuropaVR.dll, the UEVR C++ plugin.
-#   .\build_plugin.ps1 -UevrSdk "C:\chemin\vers\UEVR\include"
+#   .\build_plugin.ps1 -UevrSdk "C:\path\to\UEVR\include"
 param(
     [string]$UevrSdk = "H:\UEVR\include"
 )
@@ -11,16 +11,16 @@ New-Item -ItemType Directory -Force -Path $build | Out-Null
 
 $sdk = $UevrSdk
 if (-not (Test-Path (Join-Path $sdk "uevr\Plugin.hpp"))) {
-    throw "SDK UEVR introuvable dans '$sdk'. Le dossier include\ est fourni avec UEVR. Utilise -UevrSdk pour pointer dessus."
+    throw "UEVR SDK not found in '$sdk'. The include\ folder ships with UEVR. Use -UevrSdk to point at it."
 }
 
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $inst = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 $vcvars = Join-Path $inst "VC\Auxiliary\Build\vcvars64.bat"
-if (-not (Test-Path $vcvars)) { throw "vcvars64.bat introuvable dans $inst" }
+if (-not (Test-Path $vcvars)) { throw "vcvars64.bat not found in $inst" }
 
-# /MT : le plugin est charge dans le process du jeu, on evite toute dependance au
-# runtime VC redistribuable.
+# /MT: the plugin is loaded into the game's process, so avoid any dependency on the
+# redistributable VC runtime.
 $cflags = "/nologo /std:c++20 /EHsc /O2 /MT /W3 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /I`"$sdk`""
 $lflags = "/DLL /OUT:build\EuropaVR.dll /IMPLIB:build\EuropaVR.lib"
 
@@ -38,5 +38,5 @@ exit /b %errorlevel%
 $code = $LASTEXITCODE
 Remove-Item $bat -ErrorAction SilentlyContinue
 
-if ($code -ne 0) { throw "Echec de compilation du plugin (code $code)" }
+if ($code -ne 0) { throw "Plugin build failed (exit code $code)" }
 Write-Host "`nOK -> $build\EuropaVR.dll" -ForegroundColor Green
