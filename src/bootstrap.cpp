@@ -198,6 +198,40 @@ void fix_vr_rendering() {
     }
 }
 
+// Launching through Steam while SteamVR is running hands the process an
+// XR_RUNTIME_JSON environment variable pointing at SteamVR, which overrides whatever
+// OpenXR runtime the machine is actually configured for. SteamVR then treats the game
+// as a flat app, shows it in its desktop theatre, and the player has to click "Resume
+// game" once UEVR turns it into a VR app a few seconds later.
+//
+// We load the OpenXR loader ourselves, so we get to decide what it sees first. The
+// default is still to leave the inherited value alone: someone launching from Steam
+// expects to go through SteamVR, and silently rerouting them to a different runtime to
+// save one click would be a worse surprise than the click.
+void select_openxr_runtime() {
+    wchar_t current[1024]{};
+    const DWORD len =
+        GetEnvironmentVariableW(L"XR_RUNTIME_JSON", current, static_cast<DWORD>(std::size(current)));
+
+    if (len > 0 && len < std::size(current)) {
+        log("OpenXR: XR_RUNTIME_JSON = %ls", current);
+    } else {
+        log("OpenXR: XR_RUNTIME_JSON is not set");
+    }
+
+    const auto forced = setting(L"OpenXrRuntimeJson", L"");
+    if (!forced.empty()) {
+        SetEnvironmentVariableW(L"XR_RUNTIME_JSON", forced.c_str());
+        log("OpenXR: forcing runtime %ls", forced.c_str());
+        return;
+    }
+
+    if (setting_int(L"UseSystemOpenXrRuntime", 0) != 0 && len > 0) {
+        SetEnvironmentVariableW(L"XR_RUNTIME_JSON", nullptr);
+        log("OpenXR: cleared the inherited override, falling back to the system runtime");
+    }
+}
+
 // UEVR only honours the saved menu state when RememberMenuState is on; with it
 // off (the default) the menu pops open on every launch and swallows the input
 // until it is dismissed. Turning it on while pinning MenuOpen to false makes the
@@ -254,6 +288,10 @@ DWORD WINAPI bootstrap_thread(LPVOID) {
     if (delay > 0) {
         log("Waiting %d ms before injecting the runtime", delay);
         Sleep(static_cast<DWORD>(delay));
+    }
+
+    if (runtime.find(L"openxr") != std::wstring::npos) {
+        select_openxr_runtime();
     }
 
     if (load_payload(runtime.c_str()) == nullptr) {

@@ -16,11 +16,49 @@ Europa is a third-person Unreal Engine 4.27 game. This mod turns it into a first
 - **Cutscenes left alone** — the mod hands the shot back as soon as the game frames something other than the player
 - **Audio fix** — UE4 mutes the game when its window loses focus to SteamVR
 
-## Installing (end users)
+## Installing
 
-The mod is designed to be **copied into the game folder with no injector to run**. Launch the game normally from Steam and it goes to VR on its own.
+No injector to run, nothing to click. Launch the game normally from Steam and it goes to VR on its own.
 
-A release will ship a ready-made archive. Until then, see Building below.
+**1. Get the archive.** Download `EuropaVR-vX.Y.Z.zip` from [Releases](https://github.com/Pk-c/EuropaVR/releases), and close the game if it is running.
+
+**2. Extract it into your Europa folder.** In Steam: right click Europa → *Manage* → *Browse local files*. Copy the `Europa` folder from the archive on top of the one already there. If you did it right, this now exists:
+
+```
+...\steamapps\common\Europa\Europa\Binaries\Win64\dsound.dll
+```
+
+**3. Add UEVR's files.** Download `UEVR.zip` from [UEVR's releases](https://github.com/praydog/UEVR/releases) and copy these four files into `Europa\Binaries\Win64\EuropaVR\`:
+
+```
+UEVRBackend.dll   UEVRPluginNullifier.dll   openxr_loader.dll   openvr_api.dll
+```
+
+A `COPY-UEVR-FILES-HERE.txt` marks the spot; delete it once you are done. This step exists because UEVR is *All rights reserved* and is not ours to redistribute — see [Licences](#licences).
+
+**4. Put your headset on and launch Europa from Steam.** It starts flat, then switches to VR by itself a few seconds after the window appears.
+
+### Controls
+
+| Input | Action |
+|---|---|
+| Left stick | Move, relative to where you are looking |
+| Right stick | Snap turn |
+| `Insert` or L3+R3 | UEVR menu (settings, camera offsets) |
+
+Everything else keeps the game's own gamepad mapping.
+
+### Uninstalling
+
+Delete `Binaries\Win64\dsound.dll` and the `Binaries\Win64\EuropaVR\` folder. The game is then exactly as it was. Two harmless leftovers sit outside the game folder: `%APPDATA%\UnrealVRMod\Europa-Win64-Shipping\`, and the `[Audio]` / `[SystemSettings]` entries the mod adds to `%LOCALAPPDATA%\Europa\Saved\Config\WindowsNoEditor\Engine.ini`.
+
+### If something goes wrong
+
+The loader logs every step to `Binaries\Win64\EuropaVR\EuropaVR.log`, so it will say where things stopped.
+
+- **Stays flat** — check the log, and that your VR runtime is running.
+- **Crashes on launch** — UEVR is loading too early. Raise `PostWindowDelayMs` to `15000` in `EuropaVR.ini`. `Enabled=0` disables the mod without uninstalling it.
+- **SteamVR shows the game in its desktop theatre and asks you to "Resume game"** — expected. Steam hands the game SteamVR's OpenXR runtime, SteamVR sees a flat app, and the mod only turns it into a VR app a few seconds later. Dismiss the prompt once and you are in. Lowering `PostWindowDelayMs` shortens the flat window. Setting `UseSystemOpenXrRuntime=1` removes the prompt entirely by using your own OpenXR runtime instead of SteamVR's — a real change of runtime, so only do it if that is what you want.
 
 ## Architecture
 
@@ -52,9 +90,29 @@ To remove everything and return the game to its original state:
 .\deploy.ps1 -Uninstall
 ```
 
+## Performance and image quality
+
+Europa is tuned for flat screens: it renders at **65% resolution** and upscales with FSR. That is a sensible trade on a monitor and an expensive one in a headset, so the mod raises it back to 100% and turns FSR off. Stereo rendering at full resolution is well over double the pixels the game normally draws, so **expect to give some framerate back**.
+
+Everything below is in `Binaries\Win64\EuropaVR\EuropaVR.ini`, applied to the game's `Engine.ini` at launch.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `ScreenPercentage` | `100` | Internal resolution, in percent. **The first dial to lower.** Try `85`, then `75`. The game's own default was `65`. |
+| `DisableFSR` | `1` | Turns FSR off. If you drop `ScreenPercentage` a long way, setting this back to `0` lets FSR upscale again — softer, but cheaper than the resolution it buys back. |
+| `AntiAliasing` | `-1` | `-1` leaves the game's choice (TAA). TAA is what causes ghosting in VR, but removing it makes the foliage shimmer, and this game is full of it. Try `1` (FXAA) or `0` (none) and pick your poison. |
+| `FixVRRendering` | `1` | `0` leaves the game's rendering settings completely alone. |
+
+Two more levers live outside that file:
+
+- **UEVR menu → Resolution Scale** — scales the VR render target itself, independently of the game's own screen percentage. Adjustable live, in the headset.
+- **UEVR menu → Rendering Method** — *Native Stereo* is the default and looks best. *Synchronized Sequential* and *AFR* trade image quality for speed and are worth trying if the framerate is far off.
+
+If you are hunting frames, lower `ScreenPercentage` first: it is the single biggest cost, and the change is immediately visible.
+
 ## Settings
 
-`Binaries\Win64\EuropaVR\EuropaVR.ini` — loader: VR runtime, timings, audio fix, UEVR menu.
+`Binaries\Win64\EuropaVR\EuropaVR.ini` — loader: VR runtime, timings, audio fix, rendering, UEVR menu.
 
 `%APPDATA%\UnrealVRMod\Europa-Win64-Shipping\EuropaVR_plugin.ini` — plugin:
 
