@@ -8,15 +8,17 @@ Europa is a third-person Unreal Engine 4.27 game. This mod turns it into a first
 
 > This is still a work in progress. the game is playable, but I plan to add more to make it as immersive as possible !
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/A0Y524C5N8)
+
 ## What it does
 
-- **First-person view** anchored to the character skeleton's `head` bone
+- **First-person 6DOF view** anchored to the character skeleton's `head` bone,  direction of movement is based on headset
 - **No head bob** — the view rides the character capsule rather than the animated bone, with a low-pass filtered eye height
-- **The body follows your gaze**, so the headset decides which way you walk
+- **Room scale movement with collisions**, you can move physically the character will follow, collision will prevent your camera to go inside walls
 - **Snap turn** on the right stick, rotating both the view and the character
 - **Strafing and backpedalling** without the character pivoting to face its velocity
 - **Cutscenes left alone** — the mod hands the shot back as soon as the game frames something other than the player
-- **Audio fix** — UE4 mutes the game when its window loses focus to SteamVR
+- **Graphic enhancement** — render scale set at 100% ( original game is 65% ), can be customized to fit your hardware
 
 ## Installing
 
