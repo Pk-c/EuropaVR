@@ -44,7 +44,11 @@ Everything else keeps the game's own gamepad mapping.
 
 ### Uninstalling
 
-Delete `Binaries\Win64\dsound.dll` and the `Binaries\Win64\EuropaVR\` folder. The game is then exactly as it was. Two harmless leftovers sit outside the game folder: `%APPDATA%\UnrealVRMod\Europa-Win64-Shipping\`, and the `[Audio]` / `[SystemSettings]` entries the mod adds to `%LOCALAPPDATA%\Europa\Saved\Config\WindowsNoEditor\Engine.ini`.
+Delete `Binaries\Win64\dsound.dll` and the `Binaries\Win64\EuropaVR\` folder, and the mod is gone.
+
+One leftover is worth cleaning up though. The mod adds `[Audio]` and `[SystemSettings]` sections to `%LOCALAPPDATA%\Europa\Saved\Config\WindowsNoEditor\Engine.ini`, and `[SystemSettings]` **keeps applying to the flat game** — it holds `r.ScreenPercentage=100`, so the game would run at full resolution instead of the 65% it ships with, and feel heavier than before you installed anything. Delete both sections to put it back as it was.
+
+`%APPDATA%\UnrealVRMod\Europa-Win64-Shipping\` is inert without the mod and can be left alone.
 
 ### If something goes wrong
 

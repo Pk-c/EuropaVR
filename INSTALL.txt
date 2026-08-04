@@ -66,10 +66,18 @@ UNINSTALL
       Europa\Binaries\Win64\dsound.dll
       Europa\Binaries\Win64\EuropaVR\        (whole folder)
 
-  The mod writes two things outside the game folder, harmless to leave behind:
-      %APPDATA%\UnrealVRMod\Europa-Win64-Shipping\   (VR settings)
-      [Audio] and [SystemSettings] entries in
+  The mod also writes outside the game folder. One of those is worth cleaning up:
+
       %LOCALAPPDATA%\Europa\Saved\Config\WindowsNoEditor\Engine.ini
+
+  It gains an [Audio] section, which does nothing without the mod, and a
+  [SystemSettings] section holding r.ScreenPercentage=100 and FSR off. That
+  second one KEEPS APPLYING to the flat game - it would run at full resolution
+  instead of the 65% it ships with, so it will be heavier than it was. Delete
+  both sections to put it back exactly as it was.
+
+  This one is genuinely inert without the mod and can be left alone:
+      %APPDATA%\UnrealVRMod\Europa-Win64-Shipping\   (VR settings)
 
 
 IF IT DOES NOT WORK
