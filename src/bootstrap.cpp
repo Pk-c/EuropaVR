@@ -181,14 +181,16 @@ void fix_vr_rendering() {
         log("Rendering: r.ScreenPercentage=%d", screen_percentage);
     }
 
-    if (setting_int(L"DisableFSR", 1) != 0) {
-        set_ini_value(engine_ini, L"SystemSettings", L"r.FidelityFX.FSR.Enabled", L"0");
-        log("Rendering: FSR disabled");
-    }
+    // Off by default: at 100% render scale there is nothing for it to upscale. It
+    // earns its keep only once ScreenPercentage comes down, which the menu exposes.
+    const int fsr = setting_int(L"FSR", 0);
+    set_ini_value(engine_ini, L"SystemSettings", L"r.FidelityFX.FSR.Enabled",
+                  fsr != 0 ? L"1" : L"0");
+    log("Rendering: FSR %s", fsr != 0 ? "enabled" : "disabled");
 
-    // -1 leaves the game's choice alone. 0 = none, 1 = FXAA, 2 = TAA (the default here).
-    // TAA is what causes ghosting in VR, but dropping it makes a game this foliage-heavy
-    // shimmer, so the call is left to the player rather than forced.
+    // -1 leaves the game's choice alone; 0 = none, 1 = FXAA, 2 = TAA. Left at -1: TAA
+    // ghosts in VR, but removing it makes a game this dense with foliage shimmer, and
+    // that trade belongs to the player rather than to a default.
     const int aa = setting_int(L"AntiAliasing", -1);
     if (aa >= 0) {
         const auto value = std::to_wstring(aa);

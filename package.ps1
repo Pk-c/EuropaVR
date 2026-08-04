@@ -1,15 +1,16 @@
 # Builds a release archive, laid out so that extracting it into the game folder is the
 # whole install.
 #
-# UEVR's own binaries are NOT bundled. UEVR is "All rights reserved" (only its include/
-# directory is MIT), so redistributing UEVRBackend.dll or UEVRPluginNullifier.dll is not
-# ours to do. Users fetch UEVR themselves; INSTALL.txt tells them which files to copy.
-# -IncludeUevr exists for the day permission is granted, and for local test builds.
+# UEVR's binaries are bundled with praydog's permission. UEVR is "All rights reserved"
+# - only its include/ directory is MIT - so this is not something the licence grants;
+# it was asked for and given. Their licence texts travel with them, and packaging
+# refuses to build without them.
+# -NoUevr produces the fetch-it-yourself archive instead.
 param(
-    [string]$Version = "0.1.0",
+    [string]$Version = "0.2.0",
     [string]$UevrDir = "H:\UEVR",
     [string]$OutDir  = "dist",
-    [switch]$IncludeUevr
+    [switch]$NoUevr
 )
 
 $ErrorActionPreference = "Stop"
@@ -37,13 +38,12 @@ Copy-Item $proxy (Join-Path $win64 "dsound.dll") -Force
 
 $redist = @("UEVRBackend.dll", "UEVRPluginNullifier.dll", "openxr_loader.dll", "openvr_api.dll")
 
-if ($IncludeUevr) {
+if (-not $NoUevr) {
     foreach ($f in $redist) {
         $src = Join-Path $UevrDir $f
         if (-not (Test-Path $src)) { throw "Missing UEVR file: $src" }
         Copy-Item $src (Join-Path $payload $f) -Force
     }
-    Write-Warning "UEVR binaries bundled. Do not publish this archive without permission from praydog."
 } else {
     # A placeholder in the exact folder the files belong in beats an instruction
     # buried in a readme.
@@ -64,7 +64,6 @@ redistribute. Nothing else is needed; delete this file once you are done.
 
 Copy-Item (Join-Path $root "payload\EuropaVR.ini")                                  (Join-Path $payload "EuropaVR.ini") -Force
 Copy-Item (Join-Path $root "payload\profile\config.txt")                            (Join-Path $payload "profile\config.txt") -Force
-Copy-Item (Join-Path $root "payload\profile\EuropaVR_plugin.ini")                   (Join-Path $payload "profile\EuropaVR_plugin.ini") -Force
 Copy-Item (Join-Path $root "payload\profile\scripts\europavr_firstperson.lua")      (Join-Path $payload "profile\scripts\") -Force
 Copy-Item $plugin                                                                   (Join-Path $payload "profile\plugins\EuropaVR.dll") -Force
 
@@ -81,12 +80,13 @@ $uevrSdkLicense = Join-Path $UevrDir "include\LICENSE"
 if (Test-Path $uevrSdkLicense) { Copy-Item $uevrSdkLicense (Join-Path $licDir "UEVR-SDK-LICENSE.txt") -Force }
 
 $missing = @()
-if ($IncludeUevr) {
+if (-not $NoUevr) {
     $uevrDisclaimer = Join-Path $UevrDir "DISCLAIMER.txt"
     if (Test-Path $uevrDisclaimer) { Copy-Item $uevrDisclaimer (Join-Path $licDir "UEVR-DISCLAIMER.txt") -Force }
 
     $repoLicenses = Join-Path $root "licenses"
     foreach ($item in @(
+        @{ File = "UEVR-LICENSE.txt";        For = "UEVRBackend.dll, UEVRPluginNullifier.dll" },
         @{ File = "OpenXR-Apache-2.0.txt";   For = "openxr_loader.dll" },
         @{ File = "OpenVR-BSD-3-Clause.txt"; For = "openvr_api.dll" }
     )) {
@@ -98,6 +98,12 @@ if ($IncludeUevr) {
 Copy-Item (Join-Path $root "THIRD-PARTY.txt") (Join-Path $stage "THIRD-PARTY.txt") -Force
 Copy-Item (Join-Path $root "INSTALL.txt")     (Join-Path $stage "INSTALL.txt") -Force
 
+# Checked before anything is written, so a build that cannot ship legally never
+# produces an archive someone might publish by mistake.
+if ($missing.Count -gt 0) {
+    throw "Refusing to build: missing licence texts ($($missing -join '; ')). Apache-2.0 requires shipping a copy of the licence alongside the binary it covers. See licenses\README.md."
+}
+
 # --- archive -------------------------------------------------------------------
 $zip = Join-Path $dist "$name.zip"
 if (Test-Path $zip) { Remove-Item -LiteralPath $zip -Force }
@@ -107,10 +113,3 @@ Write-Host ""
 Write-Host "OK -> $zip" -ForegroundColor Green
 Get-ChildItem -Recurse -File $stage | ForEach-Object { "   " + $_.FullName.Replace("$stage\","") }
 
-if ($missing.Count -gt 0) {
-    Write-Host ""
-    Write-Warning "Missing licence texts in licenses\:"
-    $missing | ForEach-Object { Write-Warning "   $_" }
-    Write-Warning "Apache-2.0 requires shipping a copy of the licence with the redistributed binary."
-    Write-Warning "See licenses\README.md."
-}

@@ -16,15 +16,11 @@ local config = {
     bone            = "head",
     gameplay_camera = "BP_LakituCam",
 
-    -- HANDOVER: the C++ plugin (EuropaVR.dll) now owns everything rotational — the
-    -- view rotation, the snap turn, the HMD yaw and the body yaw. This script keeps
-    -- the view POSITION and the cosmetics. The two write different fields of
-    -- different structs, so callback ordering between them cannot matter.
-    -- The forward eye offset moved to the plugin, which is the only side that knows
-    -- the final yaw.
-    forward_offset  = 0.0,
-    up_offset       = 0.0,
-    write_view_rotation = false,
+    -- HANDOVER: the C++ plugin (EuropaVR.dll) owns everything rotational - view
+    -- rotation, snap turn, HMD yaw, body yaw, and the forward eye offset, which needs
+    -- the headset yaw this side cannot see. What is left here is the view POSITION and
+    -- the cosmetics. The two write different fields of different structs, so callback
+    -- ordering between them cannot matter.
 
     -- Anchor the view to the capsule instead of the animated bone. The bone carries
     -- the walk cycle, and head bob is a reliable way to make people sick in VR. The
@@ -33,36 +29,10 @@ local config = {
     stabilize        = true,
     height_smoothing = 3.0,
 
-    -- Turn the character to face where the player is looking, so walking direction
-    -- follows the head.
-    turn_with_head  = false, -- taken over by the C++ plugin
-
-    -- ALS_RotationMode: 0 = VelocityDirection (the character turns to face wherever
-    -- it is moving, which is why pushing back made it turn around), 1 = LookingDirection
-    -- (it faces the control rotation and strafes/backpedals instead), 2 = Aiming.
+    -- ALS_RotationMode: 1 = LookingDirection, so the character strafes and backpedals
+    -- rather than pivoting to face its velocity. The plugin also sets this; kept here
+    -- because this script still owns what the body looks like.
     rotation_mode   = 1,
-
-    -- Stamp the actor yaw directly after the game's tick. This is the bypass: it wins
-    -- over ALS's own rotation logic instead of negotiating with it.
-    force_actor_yaw = false, -- taken over by the C++ plugin
-
-    -- Let UEVR own the yaw. Its Aim Method drives the game's control rotation from
-    -- the headset, and its snap turn applies a world rotation offset that the same
-    -- system sees. Hand-rolling this meant reimplementing it without access to the
-    -- HMD yaw, which is why the body never followed the head: the rotation read back
-    -- from the stereo callback does not contain the headset at all.
-    -- REVERTED: turning this on locked the view to the game camera and killed head
-    -- tracking outright. UEVR's aim system and our own view override fight over the
-    -- same rotation, and the result is nauseating. Left here, off, so the mechanism
-    -- is documented rather than silently deleted.
-    use_uevr_aim    = false,
-
-    snap_turn           = false, -- taken over by the C++ plugin
-    snap_angle          = 45.0,
-    snap_threshold      = 0.5, -- fraction of stick travel that triggers a snap
-    snap_release        = 0.3, -- must fall back below this before the next snap
-    snap_cooldown       = 18,  -- frames to wait before another snap can fire
-    consume_right_stick = true, -- keep the game from also applying TurnRate/LookUpRate
 
     hide_head     = true,
     -- "bone" | "mesh" | "none" — see set_head_hidden for the trade-off each carries.
@@ -80,10 +50,7 @@ local state = {
     gameplay    = false,
 
     eye_height  = nil,  -- filtered head-above-capsule offset
-    snap_yaw    = 0.0,  -- accumulated snap turn, degrees
-    snap_armed  = true,
-    snap_wait   = 0,    -- cooldown frames left
-    view_yaw    = nil,  -- final yaw incl. HMD, sampled post-transform
+    hide_list   = nil,  -- cached skeletal mesh components, rebuilt when the pawn changes
 }
 
 local d = {
@@ -100,6 +67,7 @@ local d = {
 }
 
 local emit = { count = 0, max = 10, last = "", next_beat = 1 }
+
 
 local function try(fn, ...)
     local ok, res = pcall(fn, ...)
@@ -217,62 +185,12 @@ local function actor_location()
     return nil
 end
 
---- Formats whatever fields an engine value happens to expose, for diagnostics.
-local function describe(o)
-    if o == nil then
-        return "nil"
-    end
-    local fields = {}
-    for _, k in ipairs({"w", "x", "y", "z", "W", "X", "Y", "Z", "Pitch", "Yaw", "Roll"}) do
-        local v = try(function() return o[k] end)
-        if type(v) == "number" then
-            fields[#fields + 1] = k .. "=" .. ("%.3f"):format(v)
-        end
-    end
-    if #fields == 0 then
-        return "opaque(" .. type(o) .. ")"
-    end
-    return table.concat(fields, ",")
-end
 
---- REMOVED. This probe called native VR bindings with argument lists that were never
---- verified: get_pose takes out-parameters, so invoking it with a bare index made the
---- native side write through null pointers and took the process down. pcall does not
---- catch a native access violation, so "read-only Lua" was never a safety guarantee.
---- Any future probing of this API has to start from its real signatures.
-local function probe_hmd()
-    d.hmd = "disabled"
-end
 
 local function player_controller()
     return try(function() return api:get_player_controller(0) end)
 end
 
---- The control rotation is the one place the final yaw is readable from the game side
---- once UEVR's aim system is driving it.
-local function control_yaw()
-    local pc = player_controller()
-    if pc == nil then
-        return nil
-    end
-
-    local rot = try(function() return pc.ControlRotation end)
-    local y = rot ~= nil and try(function() return rot.Yaw end) or nil
-    if y ~= nil then
-        d.ctrl_yaw = "ControlRotation"
-        return y
-    end
-
-    rot = try(function() return pc:GetControlRotation() end)
-    y = rot ~= nil and try(function() return rot.Yaw end) or nil
-    if y ~= nil then
-        d.ctrl_yaw = "GetControlRotation"
-        return y
-    end
-
-    d.ctrl_yaw = "NONE"
-    return nil
-end
 
 local function current_view_target()
     local pc = player_controller()
@@ -465,24 +383,6 @@ local function update_eye_height(delta)
     state.eye_height = state.eye_height + (target - state.eye_height) * alpha
 end
 
-local function apply_control_rotation()
-    if not config.turn_with_head or state.view_yaw == nil then
-        return
-    end
-
-    local pc = player_controller()
-    if pc == nil then
-        return
-    end
-
-    -- Pitch stays flat: leaning the character back because the player looked up is
-    -- exactly the kind of thing that breaks VR comfort.
-    local ok = try(function()
-        pc:SetControlRotation({Pitch = 0.0, Yaw = state.view_yaw, Roll = 0.0})
-        return true
-    end)
-    d.control_rot = ok and "ok" or "NONE"
-end
 
 --- Makes the body behave like an FPS: face the control rotation, and strafe or walk
 --- backwards rather than pivoting to face the direction of travel.
@@ -521,21 +421,6 @@ local function apply_character_orientation()
     end
 end
 
---- Last resort, and the reason this runs post-tick: ALS drives the character's
---- rotation from its own Blueprint logic every frame, so anything we set before the
---- game ticks is simply overwritten. Stamping the yaw after the tick is what makes it
---- stick, whatever the state machine wanted.
-local function force_actor_yaw()
-    if not config.force_actor_yaw or state.view_yaw == nil or state.pawn == nil then
-        return
-    end
-
-    local ok = try(function()
-        state.pawn:K2_SetActorRotation({Pitch = 0.0, Yaw = state.view_yaw, Roll = 0.0}, false)
-        return true
-    end)
-    d.actor_yaw = ok and "ok" or "NONE"
-end
 
 local function refresh_pawn()
     local pawn = try(function() return api:get_local_pawn(0) end)
@@ -571,16 +456,8 @@ local function report()
         "socket=" .. d.socket,
         "actor_loc=" .. d.actor_loc,
         "eye_height=" .. (state.eye_height and ("%.1f"):format(state.eye_height) or "nil"),
-        "snap_yaw=" .. ("%.0f"):format(state.snap_yaw),
-        "snaps=" .. tostring(d.snaps or 0),
-        "xinput=" .. d.xinput,
         "rot_mode=" .. tostring(d.rot_mode),
         "move_flags=" .. tostring(d.move_flags),
-        "actor_yaw=" .. tostring(d.actor_yaw),
-        "ctrl_yaw_src=" .. tostring(d.ctrl_yaw),
-        "final_yaw=" .. (state.final_yaw and ("%.0f"):format(state.final_yaw) or "nil"),
-        "control_rot=" .. d.control_rot,
-        "HMD[" .. tostring(d.hmd) .. "]",
         "readback=" .. d.readback,
         "hide_bone=" .. d.hide_bone,
         "components=" .. tostring(d.components),
@@ -591,13 +468,8 @@ end
 uevr.sdk.callbacks.on_pre_engine_tick(function(engine, delta)
     d.ticks = d.ticks + 1
 
-    if state.snap_wait > 0 then
-        state.snap_wait = state.snap_wait - 1
-    end
-
     refresh_pawn()
     state.gameplay = compute_gameplay()
-    probe_hmd()
 
     if state.gameplay then
         if config.collapse_boom then
@@ -637,60 +509,6 @@ uevr.sdk.callbacks.on_post_engine_tick(function()
     end
 
     apply_character_orientation()
-
-    if config.use_uevr_aim then
-        -- UEVR sets the control rotation itself; we only read it back, for the eye
-        -- offset and for diagnostics.
-        state.final_yaw = control_yaw()
-    else
-        apply_control_rotation()
-        force_actor_yaw()
-        state.final_yaw = state.view_yaw
-    end
-end)
-
---- Snap turn, driven straight off the raw pad so the game never sees the stick.
-uevr.sdk.callbacks.on_xinput_get_state(function(retval, user_index, xstate)
-    if not config.snap_turn then
-        return
-    end
-
-    local pad = try(function() return xstate.Gamepad end)
-    if pad == nil then
-        d.xinput = "NO Gamepad"
-        return
-    end
-
-    -- XInput is polled for every pad index and several times per frame. Evaluating
-    -- the stick on all of them was the bug behind the runaway snapping: the empty
-    -- pads read as centred and re-armed the trigger between two real samples.
-    if user_index == 0 then
-        local rx = try(function() return pad.sThumbRX end)
-        if rx == nil then
-            d.xinput = "NO sThumbRX"
-            return
-        end
-        d.xinput = "ok"
-
-        local axis = rx / 32767.0
-        if math.abs(axis) < config.snap_release then
-            state.snap_armed = true
-        elseif state.snap_armed and state.snap_wait <= 0 and math.abs(axis) >= config.snap_threshold then
-            local step = axis > 0 and config.snap_angle or -config.snap_angle
-            state.snap_yaw = (state.snap_yaw + step) % 360.0
-            state.snap_armed = false
-            state.snap_wait = config.snap_cooldown
-            d.snaps = (d.snaps or 0) + 1
-        end
-    end
-
-    if config.consume_right_stick then
-        try(function()
-            pad.sThumbRX = 0
-            pad.sThumbRY = 0
-            return true
-        end)
-    end
 end)
 
 uevr.sdk.callbacks.on_pre_calculate_stereo_view_offset(function(device, view_index, world_to_meters, position, rotation, is_double)
@@ -713,37 +531,12 @@ uevr.sdk.callbacks.on_pre_calculate_stereo_view_offset(function(device, view_ind
         end
     end
 
-    -- The whole point: discard the game's camera orientation outright. Keeping it as
-    -- a base meant BP_LakituCam decided where "forward" was and the headset merely
-    -- added to it, so the player's gaze never chose the direction. With a constant
-    -- base, UEVR's HMD rotation lands on top of nothing but our snap offset, and the
-    -- view becomes purely head driven.
-    if config.write_view_rotation then
-        local base_yaw = config.use_uevr_aim and 0.0 or state.snap_yaw
-        if not set_xyz(rotation, 0.0, base_yaw, 0.0) then
-            d.readback = "ROT WRITE FAILED"
-        end
-    end
-
-    if config.forward_offset ~= 0.0 then
-        local r = math.rad(state.final_yaw or 0.0)
-        x = x + math.cos(r) * config.forward_offset
-        y = y + math.sin(r) * config.forward_offset
-    end
-    z = z + config.up_offset
-
+    -- Position only. The plugin owns the view rotation and the forward eye offset,
+    -- because it is the only side that knows the headset yaw.
     if set_xyz(position, x, y, z) then
-        d.readback = ("z=%.1f yaw=%.0f"):format(z, state.view_yaw or state.snap_yaw)
+        d.readback = ("z=%.1f"):format(z)
     else
         d.readback = "POS WRITE FAILED"
-    end
-end)
-
---- After UEVR's transforms the rotation carries the HMD, which is the yaw we want the
---- character to face.
-uevr.sdk.callbacks.on_post_calculate_stereo_view_offset(function(device, view_index, world_to_meters, position, rotation, is_double)
-    if state.gameplay then
-        state.view_yaw = try(function() return rotation.y end)
     end
 end)
 

@@ -32,22 +32,15 @@ No injector to run, nothing to click. Launch the game normally from Steam and it
 ...\steamapps\common\Europa\Europa\Binaries\Win64\dsound.dll
 ```
 
-**3. Add UEVR's files.** Download `UEVR.zip` from [UEVR's releases](https://github.com/praydog/UEVR/releases) and copy these four files into `Europa\Binaries\Win64\EuropaVR\`:
-
-```
-UEVRBackend.dll   UEVRPluginNullifier.dll   openxr_loader.dll   openvr_api.dll
-```
-
-A `COPY-UEVR-FILES-HERE.txt` marks the spot; delete it once you are done. This step exists because UEVR is *All rights reserved* and is not ours to redistribute — see [Licences](#licences).
-
-**4. Put your headset on and launch Europa from Steam.** It starts flat, then switches to VR by itself a few seconds after the window appears.
+**3. Put your headset on and launch Europa from Steam.** It starts flat, then switches to VR by itself a few seconds after the window appears.
 
 ### Controls
 
 | Input | Action |
 |---|---|
 | Left stick | Move, relative to where you are looking |
-| Right stick | Snap turn |
+| Right stick | Turn (snap by default) |
+| Right stick click | Pause menu |
 | `Insert` or L3+R3 | UEVR menu (settings, camera offsets) |
 
 Everything else keeps the game's own gamepad mapping.
@@ -103,7 +96,7 @@ Everything below is in `Binaries\Win64\EuropaVR\EuropaVR.ini`, applied to the ga
 | Setting | Default | What it does |
 |---|---|---|
 | `ScreenPercentage` | `100` | Internal resolution, in percent. **The first dial to lower.** Try `85`, then `75`. The game's own default was `65`. |
-| `DisableFSR` | `1` | Turns FSR off. If you drop `ScreenPercentage` a long way, setting this back to `0` lets FSR upscale again — softer, but cheaper than the resolution it buys back. |
+| `FSR` | `0` | Off, because at 100% render scale there is nothing to upscale. Turn it back on if you drop `ScreenPercentage` a long way and want the sharpness back. |
 | `AntiAliasing` | `-1` | `-1` leaves the game's choice (TAA). TAA is what causes ghosting in VR, but removing it makes the foliage shimmer, and this game is full of it. Try `1` (FXAA) or `0` (none) and pick your poison. |
 | `FixVRRendering` | `1` | `0` leaves the game's rendering settings completely alone. |
 
@@ -116,18 +109,20 @@ If you are hunting frames, lower `ScreenPercentage` first: it is the single bigg
 
 ## Settings
 
-`Binaries\Win64\EuropaVR\EuropaVR.ini` — loader: VR runtime, timings, audio fix, rendering, UEVR menu.
+Everything is in one file: `Binaries\Win64\EuropaVR\EuropaVR.ini`.
 
-`%APPDATA%\UnrealVRMod\Europa-Win64-Shipping\EuropaVR_plugin.ini` — plugin:
+Its top half is read once at startup — VR runtime, timings, audio fix, rendering. Its bottom half is **re-read about once a second**, so those apply while the game is running:
 
 | Key | Effect |
 |---|---|
 | `YawSign` | `-1` or `1`. Flip it if the character turns the opposite way to your head. |
 | `YawOffset` | Constant offset in degrees, if the body sits crooked. |
-| `ForwardOffset` | Pushes the eye out of the body (cm). |
-| `SnapAngle` | Snap turn step. |
+| `ForwardOffset` / `UpOffset` | Push the eye out of the body (cm). These add to UEVR's own camera offsets. |
+| `TurnMode` | `0` snap, `1` smooth. `SnapAngle` and `SmoothTurnSpeed` go with them. |
+| `PauseButton` | `0` off, `1` left menu button, `2` left stick click, `3` right stick click. |
+| `BookDistance` | How far the in-game book sits from your face. The game's own value is 145, which is far too close in first person. |
 
-The Lua script **hot-reloads** from the UEVR menu (`Insert` key), which is handy for tuning eye height without restarting.
+The Lua script also **hot-reloads** from the UEVR menu (`Insert` key), for the things it still owns — eye height smoothing and how much of the character is drawn.
 
 ## Tooling
 

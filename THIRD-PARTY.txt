@@ -4,31 +4,35 @@ EuropaVR - third party components
 EuropaVR itself - dsound.dll, EuropaVR.dll, the Lua script and the scripts in the
 repository - is MIT licensed. See LICENSE.
 
+This archive also redistributes the binaries below, unmodified. Each remains under
+its own terms, reproduced in the licenses\ folder.
 
-WHAT IS NOT BUNDLED, AND WHY
-----------------------------
-UEVR is "All rights reserved" (https://github.com/praydog/UEVR/blob/master/LICENSE).
-Only its include/ directory carries a separate MIT licence, and that directory
-states so explicitly.
 
-So:
+UEVR  -  UEVRBackend.dll, UEVRPluginNullifier.dll
+    Copyright (c) 2022-2025 praydog
+    All rights reserved - https://github.com/praydog/UEVR
 
-  * EuropaVR.dll is built against UEVR's include/ headers, which are MIT. That
-    notice is in licenses\UEVR-SDK-LICENSE.txt.
+    Bundled with praydog's permission. UEVR's licence does not grant redistribution;
+    it was asked for and given. Anyone forking this project and shipping their own
+    archive needs their own permission - do not assume it carries over.
 
-  * UEVRBackend.dll and UEVRPluginNullifier.dll are NOT redistributed here. They
-    are praydog's work and not ours to hand out. Download UEVR yourself from
-    https://github.com/praydog/UEVR/releases and copy them in, as INSTALL.txt
-    explains.
+    UEVR's include/ directory, which EuropaVR.dll is compiled against, is separately
+    MIT licensed and says so itself. That notice is in licenses\UEVR-SDK-LICENSE.txt.
 
-  * openvr_api.dll (Valve, BSD-3-Clause) and openxr_loader.dll (The Khronos
-    Group, Apache-2.0) are permissively licensed and could be redistributed, but
-    they come in the same UEVR download, so they are left there too rather than
-    split across two sources.
+    UEVR is not affiliated with, endorsed by, or connected to Epic Games, Unreal
+    Engine, or any of their affiliates. See licenses\UEVR-DISCLAIMER.txt.
 
-If a build ever does bundle those binaries - package.ps1 -IncludeUevr does, for
-local testing - then the licences\ folder carries their licence texts, and such a
-build must not be published without permission from praydog.
+
+OpenVR  -  openvr_api.dll
+    Copyright (c) Valve Corporation
+    Licence : BSD-3-Clause
+    Source  : https://github.com/ValveSoftware/openvr
+
+
+OpenXR Loader  -  openxr_loader.dll
+    Copyright (c) The Khronos Group Inc.
+    Licence : Apache-2.0
+    Source  : https://github.com/KhronosGroup/OpenXR-SDK
 
 
 NOT INCLUDED
@@ -36,6 +40,3 @@ NOT INCLUDED
 No content from Europa is included in this archive or in the source repository.
 Europa is the property of Novadust Entertainment. This mod only loads alongside
 the game and changes nothing on disk beyond the files listed in INSTALL.txt.
-
-UEVR is not affiliated with, endorsed by, or connected to Epic Games, Unreal
-Engine, or any of their affiliates. Neither is this mod.

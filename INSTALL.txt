@@ -7,6 +7,8 @@ REQUIREMENTS
   * A PC VR headset with an OpenXR runtime (SteamVR, Oculus/Meta, Virtual Desktop...)
   * Windows 10/11, 64-bit
 
+  Nothing else to download. UEVR is included.
+
 
 INSTALL
 -------
@@ -23,27 +25,7 @@ INSTALL
 
      To find the folder: Steam -> right click Europa -> Manage -> Browse local files.
 
-  3. Download UEVR and copy four files in.
-
-     Get "UEVR.zip" from  https://github.com/praydog/UEVR/releases
-     Open it and copy these four files:
-
-         UEVRBackend.dll
-         UEVRPluginNullifier.dll
-         openxr_loader.dll
-         openvr_api.dll
-
-     into:
-
-         ...\Europa\Binaries\Win64\EuropaVR\
-
-     There is a COPY-UEVR-FILES-HERE.txt sitting in that folder to mark the spot;
-     delete it once you are done.
-
-     Why the extra step: UEVR is "All rights reserved", so it is not ours to
-     redistribute. This is the one thing you have to fetch yourself.
-
-  4. Put your headset on and launch Europa normally from Steam.
+  3. Put your headset on and launch Europa normally from Steam.
 
 That is all. There is no injector to run and nothing to click. The game starts
 flat, then switches to VR by itself a few seconds after the window appears.
@@ -51,23 +33,27 @@ flat, then switches to VR by itself a few seconds after the window appears.
 
 CONTROLS
 --------
-  Left stick        move, relative to where you are looking
-  Right stick       snap turn
-  Insert  or L3+R3  open the UEVR menu (settings, camera offsets)
+  Left stick          move, relative to where you are looking
+  Right stick         turn (snap by default)
+  Right stick click   pause menu
+  Insert  or L3+R3    open the UEVR menu (settings, camera offsets)
 
 Everything else keeps the game's own gamepad mapping.
 
 
 TUNING
 ------
-  Europa\Binaries\Win64\EuropaVR\EuropaVR.ini
-      Resolution, FSR, anti-aliasing, VR runtime, timings.
-      Lower ScreenPercentage first if the framerate struggles: 85, then 75.
+  Everything is in one file:
 
-  %APPDATA%\UnrealVRMod\Europa-Win64-Shipping\EuropaVR_plugin.ini
-      Eye placement and snap turn. Re-read about once a second, so edits apply
-      while the game is running.
-      If the character turns the opposite way to your head, set YawSign=1.
+      Europa\Binaries\Win64\EuropaVR\EuropaVR.ini
+
+  The top half is read at startup - VR runtime, timings, resolution, FSR,
+  anti-aliasing. Lower ScreenPercentage first if the framerate struggles: try 85,
+  then 75.
+
+  The bottom half is re-read about once a second, so those edits apply while the
+  game is running - eye placement, turning, pause button, the in-game book.
+  If the character turns the opposite way to your head, set YawSign=1.
 
   UEVR menu -> Camera Offset
       Nudge the eye position live, in the headset.
@@ -101,6 +87,12 @@ IF IT DOES NOT WORK
         UEVR is loading too early. Raise PostWindowDelayMs in EuropaVR.ini
         (try 15000). Enabled=0 disables the mod entirely without uninstalling.
 
+  * SteamVR shows the game in its desktop theatre, asking you to "Resume game"
+        Expected. Steam hands the game SteamVR's OpenXR runtime, SteamVR sees a
+        flat app, and the mod only turns it into a VR app a few seconds later.
+        Dismiss it once. UseSystemOpenXrRuntime=1 avoids it by using your own
+        OpenXR runtime instead - a real change of runtime, so only if you want it.
+
   * No sound once VR starts
         Should be handled automatically. If not, check that SteamVR is not
         switching your default audio device away from where you are listening.
@@ -108,5 +100,7 @@ IF IT DOES NOT WORK
 
 LICENCES
 --------
-  See THIRD-PARTY.txt and the licenses\ folder. This mod bundles UEVR by
-  praydog; it is not affiliated with Novadust Entertainment or Epic Games.
+  UEVR is bundled with praydog's permission - its licence does not grant that,
+  it was asked for and given. See THIRD-PARTY.txt and the licenses\ folder.
+
+  This mod is not affiliated with Novadust Entertainment, Epic Games or praydog.

@@ -1,6 +1,8 @@
-﻿FrameworkConfig_MenuOpen=false
-FrameworkConfig_RememberMenuState=true
+﻿FrameworkConfig_RememberMenuState=true
 Frontend_RequestedRuntime=openxr_loader.dll
+ï»¿FrameworkConfig_MenuOpen=false
+UI_Distance=2.000000
+UI_Size=2.000000
 VR_AimMethod=0
 VR_AimModifyPlayerControlRotation=false
 VR_AimUsePawnControlRotation=false
