@@ -4,20 +4,15 @@
 
 A first-person VR mod for **[Europa](https://store.steampowered.com/app/2214880/Europa/)** (Novadust Entertainment), built on praydog's [UEVR](https://github.com/praydog/UEVR).
 
-Europa is a third-person Unreal Engine 4.27 game. This mod turns it into a first-person VR experience: the camera sits at the character's head, the body faces wherever you look, and movement works like an FPS with snap turning.
-
-> This is still a work in progress. the game is playable, but I plan to add more to make it as immersive as possible !
+Europa is a third-person game. This mod turns it into a first-person VR experience: the camera sits at the character's head, the body faces wherever you look, and movement works like an FPS with snap & smooth turning.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/A0Y524C5N8)
 
 ## What it does
 
-- **First-person 6DOF view** anchored to the character skeleton's `head` bone,  direction of movement is based on headset
-- **No head bob** — the view rides the character capsule rather than the animated bone, with a low-pass filtered eye height
+- **First-person 6DOF view** anchored to the character skeleton's `head` bone,  direction of movement is based on headset, controls are adapted for First person VR
 - **Room scale movement with collisions**, you can move physically the character will follow, collision will prevent your camera to go inside walls
-- **Snap turn** on the right stick, rotating both the view and the character
-- **Strafing and backpedalling** without the character pivoting to face its velocity
-- **Cutscenes left alone** — the mod hands the shot back as soon as the game frames something other than the player
+- **UI fix** the UI should be adapted for VR and readable
 - **Graphic enhancement** — render scale set at 100% ( original game is 65% ), can be customized to fit your hardware
 
 ## Installing
@@ -134,7 +129,7 @@ Extracting the `.pak` uses [repak](https://github.com/trumank/repak), which is n
 
 Code in this repository: MIT (see `LICENSE`).
 
-**UEVR itself is "All rights reserved"** — only its `include/` directory is MIT, and that directory says so explicitly. The plugin is built against those MIT headers, which is fine, but `UEVRBackend.dll` and `UEVRPluginNullifier.dll` are **not** redistributed by this project. Releases ship only our own files; users download UEVR themselves and copy four DLLs in, as `INSTALL.txt` explains.
+UEVR dll are included in the archive
 
 See `THIRD-PARTY.txt` for the full breakdown.
 
