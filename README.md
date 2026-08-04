@@ -15,6 +15,8 @@ Europa is a third-person game. This mod turns it into a first-person VR experien
 - **UI fix** the UI should be adapted for VR and readable
 - **Graphic enhancement** — render scale set at 100% ( original game is 65% ), can be customized to fit your hardware
 
+  https://www.youtube.com/watch?v=xH1kFPG1oWo
+
 ## Installing
 
 No injector to run, nothing to click. Launch the game normally from Steam and it goes to VR on its own.
