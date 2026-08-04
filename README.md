@@ -129,8 +129,6 @@ Extracting the `.pak` uses [repak](https://github.com/trumank/repak), which is n
 
 Code in this repository: MIT (see `LICENSE`).
 
-UEVR dll are included in the archive
-
 See `THIRD-PARTY.txt` for the full breakdown.
 
 No game content is included in this repository. Europa is the property of Novadust Entertainment.
