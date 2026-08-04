@@ -19,7 +19,7 @@ Europa is a third-person game. This mod turns it into a first-person VR experien
 
 No injector to run, nothing to click. Launch the game normally from Steam and it goes to VR on its own.
 
-**1. Get the archive.** Download `EuropaVR-vX.Y.Z.zip` from [Releases](https://github.com/Pk-c/EuropaVR/releases), and close the game if it is running.
+**1. Get the archive.** Download `EuropaVR-v0.2.0.zip` from [Releases](https://github.com/Pk-c/EuropaVR/releases), and close the game if it is running.
 
 **2. Extract it into your Europa folder.** In Steam: right click Europa → *Manage* → *Browse local files*. Copy the `Europa` folder from the archive on top of the one already there. If you did it right, this now exists:
 
