@@ -31,6 +31,8 @@ No injector to run, nothing to click. Launch the game normally from Steam and it
 
 **3. Put your headset on and launch Europa from Steam.** It starts flat, then switches to VR by itself a few seconds after the window appears.
 
+*If you are on linux you may need to add "WINEDLLOVERRIDES="dsound=n,b" %command%" as a launch option
+
 ### Controls
 
 | Input | Action |
