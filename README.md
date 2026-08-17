@@ -6,6 +6,14 @@ A first-person VR mod for **[Europa](https://store.steampowered.com/app/2214880/
 
 Europa is a third-person game. This mod turns it into a first-person VR experience: the camera sits at the character's head, the body faces wherever you look, and movement works like an FPS with snap & smooth turning.
 
+If you like my work you can follow me on Patreon ( free membership ), I try to make like native mode for beautiful games!
+
+https://patreon.com/ChromaticMod
+
+<img width="200" height="105" alt="imakevrmodforgames-preview" src="https://github.com/user-attachments/assets/0517352b-e120-47bc-b062-b85fc333f814" />
+
+OR
+
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/A0Y524C5N8)
 
 ## What it does
@@ -15,6 +23,7 @@ Europa is a third-person game. This mod turns it into a first-person VR experien
 - **UI fix** the UI should be adapted for VR and readable
 - **Graphic enhancement** — render scale set at 100% ( original game is 65% ), can be customized to fit your hardware
 
+Youtube Demo :
 [![Demo](https://img.youtube.com/vi/xH1kFPG1oWo/maxresdefault.jpg)](https://youtu.be/xH1kFPG1oWo)
 
 ## Installing
