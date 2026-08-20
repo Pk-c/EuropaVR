@@ -63,13 +63,48 @@ One leftover is worth cleaning up though. The mod adds `[Audio]` and `[SystemSet
 
 `%APPDATA%\UnrealVRMod\Europa-Win64-Shipping\` is inert without the mod and can be left alone.
 
+## Settings
+
+Everything is in one file: `Binaries\Win64\EuropaVR\EuropaVR.ini`.
+
+Its top half is read once at startup — VR runtime, timings, audio fix, rendering. Its bottom half is **re-read about once a second**, so those apply while the game is running:
+
+| Key | Effect |
+|---|---|
+| `YawSign` | `-1` or `1`. Flip it if the character turns the opposite way to your head. |
+| `YawOffset` | Constant offset in degrees, if the body sits crooked. |
+| `ForwardOffset` / `UpOffset` | Push the eye out of the body (cm). These add to UEVR's own camera offsets. |
+| `TurnMode` | `0` snap, `1` smooth. `SnapAngle` and `SmoothTurnSpeed` go with them. |
+| `PauseButton` | `0` off, `1` left menu button, `2` left stick click, `3` right stick click. |
+| `BookDistance` | How far the in-game book sits from your face. The game's own value is 145, which is far too close in first person. |
+|---|---|---|
+| `ScreenPercentage` | `100` | Internal resolution, in percent. **The first dial to lower.** Try `85`, then `75`. The game's own default was `65`. |
+| `FSR` | `0` | Off, because at 100% render scale there is nothing to upscale. Turn it back on if you drop `ScreenPercentage` a long way and want the sharpness back. |
+| `AntiAliasing` | `-1` | `-1` leaves the game's choice (TAA). TAA is what causes ghosting in VR, but removing it makes the foliage shimmer, and this game is full of it. Try `1` (FXAA) or `0` (none) and pick your poison. |
+| `FixVRRendering` | `1` | `0` leaves the game's rendering settings completely alone. |
+
+The Lua script also **hot-reloads** from the UEVR menu (`Insert` key), for the things it still owns — eye height smoothing and how much of the character is drawn.
+
+Two more levers live outside that file:
+
+- **UEVR menu → Resolution Scale** — scales the VR render target itself, independently of the game's own screen percentage. Adjustable live, in the headset.
+- **UEVR menu → Rendering Method** — *Native Stereo* is the default and looks best. *Synchronized Sequential* and *AFR* trade image quality for speed and are worth trying if the framerate is far off.
+
+Europa is tuned for flat screens: it renders at **65% resolution** and upscales with FSR. That is a sensible trade on a monitor and an expensive one in a headset, so the mod raises it back to 100% and turns FSR off. Stereo rendering at full resolution is well over double the pixels the game normally draws, so **expect to give some framerate back**.
+
+If you are hunting frames, lower `ScreenPercentage` first: it is the single biggest cost, and the change is immediately visible.
+
+### Known Issues
+
+-If you ever happen to re-spawn below the ground, open the UEVR menu with R3+L3 and then press Right trigger and Y to reset.
+-SteamVR shows the game in its desktop theatre and asks you to "Resume game" — expected. Steam hands the game SteamVR's OpenXR runtime, SteamVR sees a flat app, and the mod only turns it into a VR app a few seconds later. 
+
 ### If something goes wrong
 
 The loader logs every step to `Binaries\Win64\EuropaVR\EuropaVR.log`, so it will say where things stopped.
 
 - **Stays flat** — check the log, and that your VR runtime is running.
 - **Crashes on launch** — UEVR is loading too early. Raise `PostWindowDelayMs` to `15000` in `EuropaVR.ini`. `Enabled=0` disables the mod without uninstalling it.
-- **SteamVR shows the game in its desktop theatre and asks you to "Resume game"** — expected. Steam hands the game SteamVR's OpenXR runtime, SteamVR sees a flat app, and the mod only turns it into a VR app a few seconds later. Dismiss the prompt once and you are in. Lowering `PostWindowDelayMs` shortens the flat window. Setting `UseSystemOpenXrRuntime=1` removes the prompt entirely by using your own OpenXR runtime instead of SteamVR's — a real change of runtime, so only do it if that is what you want.
 
 ## Architecture
 
@@ -100,43 +135,6 @@ To remove everything and return the game to its original state:
 ```powershell
 .\deploy.ps1 -Uninstall
 ```
-
-## Performance and image quality
-
-Europa is tuned for flat screens: it renders at **65% resolution** and upscales with FSR. That is a sensible trade on a monitor and an expensive one in a headset, so the mod raises it back to 100% and turns FSR off. Stereo rendering at full resolution is well over double the pixels the game normally draws, so **expect to give some framerate back**.
-
-Everything below is in `Binaries\Win64\EuropaVR\EuropaVR.ini`, applied to the game's `Engine.ini` at launch.
-
-| Setting | Default | What it does |
-|---|---|---|
-| `ScreenPercentage` | `100` | Internal resolution, in percent. **The first dial to lower.** Try `85`, then `75`. The game's own default was `65`. |
-| `FSR` | `0` | Off, because at 100% render scale there is nothing to upscale. Turn it back on if you drop `ScreenPercentage` a long way and want the sharpness back. |
-| `AntiAliasing` | `-1` | `-1` leaves the game's choice (TAA). TAA is what causes ghosting in VR, but removing it makes the foliage shimmer, and this game is full of it. Try `1` (FXAA) or `0` (none) and pick your poison. |
-| `FixVRRendering` | `1` | `0` leaves the game's rendering settings completely alone. |
-
-Two more levers live outside that file:
-
-- **UEVR menu → Resolution Scale** — scales the VR render target itself, independently of the game's own screen percentage. Adjustable live, in the headset.
-- **UEVR menu → Rendering Method** — *Native Stereo* is the default and looks best. *Synchronized Sequential* and *AFR* trade image quality for speed and are worth trying if the framerate is far off.
-
-If you are hunting frames, lower `ScreenPercentage` first: it is the single biggest cost, and the change is immediately visible.
-
-## Settings
-
-Everything is in one file: `Binaries\Win64\EuropaVR\EuropaVR.ini`.
-
-Its top half is read once at startup — VR runtime, timings, audio fix, rendering. Its bottom half is **re-read about once a second**, so those apply while the game is running:
-
-| Key | Effect |
-|---|---|
-| `YawSign` | `-1` or `1`. Flip it if the character turns the opposite way to your head. |
-| `YawOffset` | Constant offset in degrees, if the body sits crooked. |
-| `ForwardOffset` / `UpOffset` | Push the eye out of the body (cm). These add to UEVR's own camera offsets. |
-| `TurnMode` | `0` snap, `1` smooth. `SnapAngle` and `SmoothTurnSpeed` go with them. |
-| `PauseButton` | `0` off, `1` left menu button, `2` left stick click, `3` right stick click. |
-| `BookDistance` | How far the in-game book sits from your face. The game's own value is 145, which is far too close in first person. |
-
-The Lua script also **hot-reloads** from the UEVR menu (`Insert` key), for the things it still owns — eye height smoothing and how much of the character is drawn.
 
 ## Tooling
 
