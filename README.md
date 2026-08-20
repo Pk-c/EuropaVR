@@ -77,7 +77,6 @@ Its top half is read once at startup — VR runtime, timings, audio fix, renderi
 | `TurnMode` | `0` snap, `1` smooth. `SnapAngle` and `SmoothTurnSpeed` go with them. |
 | `PauseButton` | `0` off, `1` left menu button, `2` left stick click, `3` right stick click. |
 | `BookDistance` | How far the in-game book sits from your face. The game's own value is 145, which is far too close in first person. |
-|---|---|---|
 | `ScreenPercentage` | `100` | Internal resolution, in percent. **The first dial to lower.** Try `85`, then `75`. The game's own default was `65`. |
 | `FSR` | `0` | Off, because at 100% render scale there is nothing to upscale. Turn it back on if you drop `ScreenPercentage` a long way and want the sharpness back. |
 | `AntiAliasing` | `-1` | `-1` leaves the game's choice (TAA). TAA is what causes ghosting in VR, but removing it makes the foliage shimmer, and this game is full of it. Try `1` (FXAA) or `0` (none) and pick your poison. |
@@ -97,6 +96,9 @@ If you are hunting frames, lower `ScreenPercentage` first: it is the single bigg
 ### Known Issues
 
 -If you ever happen to re-spawn below the ground, open the UEVR menu with R3+L3 and then press Right trigger and Y to reset.
+
+-Sometimes the book will appear at awkward place, most likely because the dev patched those place in 3rd person.
+
 -SteamVR shows the game in its desktop theatre and asks you to "Resume game" — expected. Steam hands the game SteamVR's OpenXR runtime, SteamVR sees a flat app, and the mod only turns it into a VR app a few seconds later. 
 
 ### If something goes wrong
